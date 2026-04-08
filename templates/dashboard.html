@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - AI Career Guidance{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="hero-gradient text-white rounded-4 p-5 mb-4">
+        <h1 class="display-5 fw-bold">AI Career Guidance & Skill Gap Analyzer</h1>
+        <p class="lead">Upload your resume to analyze skills, predict career roles, identify gaps, and get learning & job recommendations.</p>
+        <a href="{% url 'upload_resume' %}" class="btn btn-light btn-lg mt-3">
+            <i class="bi bi-upload me-2"></i>Upload Resume
+        </a>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card card-shadow h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-file-earmark-pdf display-6 text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">Resume Analyzer</h5>
+                            <p class="text-muted small mb-0">Extract skills from PDF/DOC</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-shadow h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-graph-up-arrow display-6 text-success"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">Career Prediction</h5>
+                            <p class="text-muted small mb-0">Predict suitable job roles</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-shadow h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-journal-bookmark display-6 text-warning"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">Learning Paths</h5>
+                            <p class="text-muted small mb-0">Courses, certs, books, YouTube</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card card-shadow">
+                <div class="card-header bg-white border-0 pt-4">
+                    <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>How it works</h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2"><strong>Upload</strong> your resume (PDF or DOC/DOCX)</li>
+                        <li class="mb-2"><strong>Analyze</strong> — NLP extracts skills, education, experience</li>
+                        <li class="mb-2"><strong>Predict</strong> career roles based on your skills</li>
+                        <li class="mb-2"><strong>Gap Detection</strong> — see missing skills for target roles</li>
+                        <li class="mb-2"><strong>Learn</strong> — get courses, certifications, YouTube, books</li>
+                        <li><strong>Apply</strong> — discover recommended jobs</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card card-shadow">
+                <div class="card-header bg-white border-0 pt-4">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Features</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Skill score & career readiness</li>
+                        <li>8+ career roles (Data Scientist, Frontend/Backend, ML Engineer, etc.)</li>
+                        <li>Personalized learning recommendations</li>
+                        <li>Job listings by predicted role</li>
+                        <li>Progress tracking dashboard</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

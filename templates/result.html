@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}Analysis Result - AI Career Guidance{% endblock %}
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Analysis Result</li>
+        </ol>
+    </nav>
+
+    <!-- Skill Score & Career Readiness -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card card-shadow text-center">
+                <div class="card-body py-4">
+                    <div class="mb-2">
+                        <span class="display-4 fw-bold text-primary">{{ resume.skill_score|floatformat:0 }}%</span>
+                    </div>
+                    <h6 class="text-muted">Skill Score</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-shadow text-center">
+                <div class="card-body py-4">
+                    <div class="mb-2">
+                        <span class="display-6 fw-bold">{{ resume.career_readiness|default:"Beginner" }}</span>
+                    </div>
+                    <h6 class="text-muted">Career Readiness</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-shadow text-center">
+                <div class="card-body py-4">
+                    <div class="mb-2">
+                        <span class="display-6 fw-bold">{{ resume.skills|length }}</span>
+                    </div>
+                    <h6 class="text-muted">Skills Extracted</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills -->
+    <div class="card card-shadow mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Extracted Skills</h5>
+        </div>
+        <div class="card-body">
+            {% for skill in resume.skills %}
+            <span class="badge skill-badge rounded-pill px-3 py-2 me-1 mb-1">{{ skill }}</span>
+            {% empty %}
+            <p class="text-muted mb-0">No skills extracted.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Predicted Roles -->
+    <div class="card card-shadow mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-briefcase me-2"></i>Predicted Career Roles</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for pr in resume.predicted_roles %}
+                <div class="col-md-6">
+                    <div class="border rounded p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>{{ pr.role }}</strong>
+                            <span class="badge bg-primary">{% widthratio pr.score 1 100 %}% match</span>
+                        </div>
+                        {% if pr.missing_required %}
+                        <small class="text-muted">Missing: {{ pr.missing_required|join:", " }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Skill Gaps -->
+    <div class="card card-shadow mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Skill Gaps (Missing Skills)</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                {% for gap in resume.skill_gaps %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ gap.skill }}</span>
+                    <span class="badge {% if gap.importance == 'high' %}bg-danger{% elif gap.importance == 'medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ gap.importance|default:"medium" }}</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">No major gaps identified. Great job!</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Learning Recommendations -->
+    <div class="card card-shadow mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-journal-plus me-2"></i>Learning Recommendations</h5>
+        </div>
+        <div class="card-body">
+            {% for rec in resume.learning_recommendations %}
+            <div class="border rounded p-3 mb-3">
+                <h6 class="text-primary">{{ rec.skill }}</h6>
+                {% if rec.courses %}
+                <p class="mb-1"><strong>Courses:</strong> {{ rec.courses|join:", " }}</p>
+                {% endif %}
+                {% if rec.certifications %}
+                <p class="mb-1"><strong>Certifications:</strong> {{ rec.certifications|join:", " }}</p>
+                {% endif %}
+                {% if rec.youtube %}
+                <p class="mb-1"><strong>YouTube:</strong> {{ rec.youtube|join:", " }}</p>
+                {% endif %}
+                {% if rec.books %}
+                <p class="mb-0"><strong>Books:</strong> {{ rec.books|join:", " }}</p>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p class="text-muted mb-0">No learning recommendations.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Education & Experience -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card card-shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-mortarboard me-2"></i>Education</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        {% for edu in resume.education %}
+                        <li>{{ edu.degree|default:edu }}</li>
+                        {% empty %}
+                        <li class="text-muted">No education extracted.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card card-shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-briefcase me-2"></i>Experience</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        {% for exp in resume.experience %}
+                        <li>{{ exp.title_or_company|default:exp }}</li>
+                        {% empty %}
+                        <li class="text-muted">No experience extracted.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Recommendations -->
+    <div class="card card-shadow mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-search me-2"></i>Recommended Jobs</h5>
+            <a href="{% url 'job_recommendations' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for job in jobs %}
+                <div class="col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="mb-1">{{ job.title }}</h6>
+                        <p class="text-muted small mb-1">{{ job.company }} • {{ job.location }}</p>
+                        {% for s in job.skills|slice:":3" %}
+                        <span class="badge bg-light text-dark">{{ s }}</span>
+                        {% endfor %}
+                        {% if job.url %}
+                        <a href="{{ job.url }}" target="_blank" class="btn btn-sm btn-link mt-2">View Job</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">No jobs found.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mb-4">
+        <a href="{% url 'upload_resume' %}" class="btn btn-outline-primary">Analyze Another Resume</a>
+    </div>
+</div>
+{% endblock %}
