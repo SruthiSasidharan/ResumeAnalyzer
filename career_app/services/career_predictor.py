@@ -3,6 +3,7 @@ Module 2: Career Prediction - Predict job role based on skills.
 Uses rule-based scoring + optional ML model.
 """
 from django.apps import apps
+from .datasets import CAREER_ROLES
 
 
 class CareerPredictor:
@@ -12,7 +13,7 @@ class CareerPredictor:
         self.roles = self._load_roles()
 
     def _load_roles(self) -> list:
-        """Load roles from DB or fallback to default."""
+        """Load roles from DB or fallback to configured roles."""
         try:
             CareerRole = apps.get_model('career_app', 'CareerRole')
             roles = list(CareerRole.objects.all().values('name', 'slug', 'required_skills', 'optional_skills'))
@@ -20,35 +21,11 @@ class CareerPredictor:
                 return roles
         except Exception:
             pass
-        return self._default_roles()
+        return CAREER_ROLES
 
     def _default_roles(self) -> list:
-        return [
-            {"name": "Data Scientist", "slug": "data-scientist",
-             "required_skills": ["Python", "Machine Learning", "SQL", "Statistics", "Data Analysis"],
-             "optional_skills": ["TensorFlow", "PyTorch", "Deep Learning", "NLP", "Pandas", "NumPy"]},
-            {"name": "Frontend Developer", "slug": "frontend-developer",
-             "required_skills": ["HTML", "CSS", "JavaScript"],
-             "optional_skills": ["React", "Angular", "Vue.js", "TypeScript", "REST API"]},
-            {"name": "Backend Developer", "slug": "backend-developer",
-             "required_skills": ["Python", "SQL", "REST API"],
-             "optional_skills": ["Node.js", "Django", "Flask", "Spring Boot", "MongoDB", "Docker", "Redis"]},
-            {"name": "Full Stack Developer", "slug": "fullstack-developer",
-             "required_skills": ["JavaScript", "HTML", "CSS", "SQL", "REST API"],
-             "optional_skills": ["React", "Node.js", "Python", "MongoDB", "Docker"]},
-            {"name": "ML Engineer", "slug": "ml-engineer",
-             "required_skills": ["Python", "Machine Learning", "TensorFlow", "PyTorch"],
-             "optional_skills": ["Deep Learning", "NLP", "Computer Vision", "Kubernetes", "Docker"]},
-            {"name": "DevOps Engineer", "slug": "devops-engineer",
-             "required_skills": ["Linux", "Docker", "CI/CD", "AWS"],
-             "optional_skills": ["Kubernetes", "Jenkins", "Azure", "GCP", "Networking"]},
-            {"name": "Data Analyst", "slug": "data-analyst",
-             "required_skills": ["SQL", "Excel", "Data Analysis", "Statistics"],
-             "optional_skills": ["Python", "Tableau", "Power BI", "Pandas"]},
-            {"name": "Software Engineer", "slug": "software-engineer",
-             "required_skills": ["Python", "Data Structures", "Algorithms", "Git"],
-             "optional_skills": ["Java", "C++", "SQL", "REST API", "Docker"]},
-        ]
+        """Legacy method - now uses CAREER_ROLES from datasets."""
+        return self._load_roles()
 
     def predict(self, skills: list) -> list:
         """

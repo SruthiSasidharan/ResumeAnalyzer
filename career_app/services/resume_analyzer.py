@@ -4,6 +4,8 @@ Module 1: Resume Analyzer - Extract skills, education, experience using NLP.
 import re
 from pathlib import Path
 
+from .datasets import SKILL_KEYWORDS, EDUCATION_PATTERNS, EXPERIENCE_PATTERNS
+
 _PDF_READER = None
 _PDF_READER_NAME = None
 
@@ -38,39 +40,6 @@ except ImportError:
 
 class ResumeAnalyzer:
     """NLP-based resume parsing and skill extraction."""
-
-    # Skill keywords for extraction (2024-2025 tech stack)
-    SKILL_KEYWORDS = [
-        "Python", "Java", "JavaScript", "TypeScript", "C++", "C#", "Ruby", "Go", "Rust", "PHP", "Kotlin", "Swift",
-        "HTML", "CSS", "React", "Angular", "Vue.js", "Node.js", "Express", "Django", "Flask", "Spring Boot", "FastAPI",
-        "Machine Learning", "Deep Learning", "ML", "DL", "TensorFlow", "PyTorch", "Keras", "Scikit-learn",
-        "NLP", "Natural Language Processing", "Computer Vision", "Data Science",
-        "SQL", "MySQL", "PostgreSQL", "MongoDB", "Redis", "NoSQL",
-        "AWS", "Azure", "GCP", "Google Cloud", "Amazon Web Services",
-        "Docker", "Kubernetes", "Jenkins", "CI/CD", "DevOps", "Git", "Linux",
-        "REST API", "GraphQL", "Microservices", "Agile", "Scrum", "JIRA",
-        "Data Structures", "Algorithms", "Statistics", "Data Analysis",
-        "Pandas", "NumPy", "Matplotlib", "Tableau", "Power BI", "Excel",
-        "Cybersecurity", "Networking", "Testing", "Unit Testing", "Selenium", "Jest",
-        "PySpark", "Hadoop", "Spark", "ETL", "Data Engineering"
-    ]
-
-    # Education patterns
-    EDUCATION_PATTERNS = [
-        r'(?i)(?:b\.?tech|b\.?e\.?|b\.?s\.?|b\.?sc|b\.?com|b\.?ca)\s*(?:in|–|-)?\s*([^\n,]+)',
-        r'(?i)(?:m\.?tech|m\.?e\.?|m\.?s\.?|m\.?sc|m\.?ba|m\.?ca)\s*(?:in|–|-)?\s*([^\n,]+)',
-        r'(?i)(?:bachelor|master|phd|doctoral)\s+(?:degree\s+)?(?:in\s+)?([^\n,]+)',
-        r'(?i)(?:diploma|certification)\s+(?:in\s+)?([^\n,]+)',
-        r'(?i)(?:graduated?|completed)\s+(?:from\s+)?([^\n,]+)',
-    ]
-
-    # Experience patterns
-    EXPERIENCE_PATTERNS = [
-        r'(?i)(?:worked|experience|intern|developer|engineer)\s+(?:at|@)\s+([^\n,\.]+)',
-        r'(?i)(?:company|organization|employer)\s*:?\s*([^\n]+)',
-        r'(?i)(?:junior|senior|associate)?\s*(?:software|web|data|ml)\s+(?:engineer|developer|analyst)[^\n]*',
-        r'(?i)(?:\d+\s*(?:years?|yrs?|months?))\s+(?:of\s+)?(?:experience|exp)[^\n]*',
-    ]
 
     def __init__(self):
         self._nlp = None
@@ -130,7 +99,7 @@ class ResumeAnalyzer:
         found_skills = set()
 
         # Keyword matching (case-insensitive)
-        for skill in self.SKILL_KEYWORDS:
+        for skill in SKILL_KEYWORDS:
             if skill.lower() in text_lower:
                 found_skills.add(skill)
             # Handle aliases
@@ -158,7 +127,7 @@ class ResumeAnalyzer:
             doc = self._nlp(text[:50000])
             for ent in doc.ents:
                 if ent.label_ in ("ORG", "PRODUCT", "WORK_OF_ART"):
-                    for kw in self.SKILL_KEYWORDS:
+                    for kw in SKILL_KEYWORDS:
                         if kw.lower() in ent.text.lower():
                             found_skills.add(kw)
                             break
@@ -166,26 +135,116 @@ class ResumeAnalyzer:
         return sorted(list(found_skills))
 
     def extract_education(self, text: str) -> list:
-        """Extract education info using regex patterns."""
+        """Extract education info by finding education section and extracting lines."""
         education = []
-        for pattern in self.EDUCATION_PATTERNS:
-            for m in re.finditer(pattern, text):
-                edu = m.group(1).strip() if m.lastindex else m.group(0).strip()
-                if edu and len(edu) > 2 and edu not in [e.get('degree', e) for e in education]:
-                    education.append({"degree": edu[:200], "source": "pattern"})
-        return education[:10]  # Limit to 10
+        seen = set()
+        
+        # Find education section
+        edu_section_match = re.search(
+            r'(?i)(?:##\s+)?(?:education|academics|qualifications|educational background).*?(?=\n(?:##|[A-Z]{2,}[\s\-]*:|\n[A-Z]{2,}\s|$))',
+            text, 
+            re.DOTALL
+        )
+        
+        if edu_section_match:
+            edu_section = edu_section_match.group(0)
+            # Extract bullet points or lines with degree keywords
+            lines = edu_section.split('\n')
+            for line in lines:
+                line = line.strip()
+                # Remove bullet points and numbering
+                line = re.sub(r'^[\•\-\*\d\.]\s*', '', line)
+                
+                # Check if line contains education keywords
+                if any(kw in line.lower() for kw in ['bachelor', 'master', 'phd', 'degree', 'b.tech', 'b.e', 'b.sc', 'm.tech', 'm.e', 'mca', 'bca', 'diploma', 'certificate']):
+                    if len(line) > 5 and len(line) < 200:
+                        line_norm = line.lower().strip()
+                        if line_norm not in seen:
+                            seen.add(line_norm)
+                            education.append({"degree": line})
+        
+        # If no section found, use regex patterns as fallback
+        if not education:
+            for pattern in EDUCATION_PATTERNS:
+                for m in re.finditer(pattern, text):
+                    for i in range(1, (m.lastindex or 0) + 1):
+                        edu_text = m.group(i)
+                        if not edu_text:
+                            continue
+                        edu_text = edu_text.strip()
+                        if 5 <= len(edu_text) <= 200:
+                            edu_norm = edu_text.lower()
+                            if edu_norm not in seen:
+                                seen.add(edu_norm)
+                                education.append({"degree": edu_text})
+                        if len(education) >= 8:
+                            break
+                    if len(education) >= 8:
+                        break
+        
+        return education[:10]
 
     def extract_experience(self, text: str) -> list:
-        """Extract experience/employment info."""
+        """Extract experience/employment info by finding experience section."""
         experience = []
-        for pattern in self.EXPERIENCE_PATTERNS:
-            for m in re.finditer(pattern, text):
-                exp = m.group(1).strip() if m.lastindex else m.group(0).strip()
-                if exp and len(exp) > 2:
-                    exp_clean = exp[:200]
-                    if not any(exp_clean in str(e) for e in experience):
-                        experience.append({"title_or_company": exp_clean})
-        return experience[:10]
+        seen = set()
+        
+        # Find experience section (various section names)
+        exp_section_match = re.search(
+            r'(?i)(?:##\s+)?(?:experience|professional experience|work experience|employment|career|competencies|core competencies).*?(?=\n(?:##|[A-Z]{2,}[\s\-]*:|\n[A-Z]{2,}\s|$))',
+            text,
+            re.DOTALL
+        )
+        
+        if exp_section_match:
+            exp_section = exp_section_match.group(0)
+            # Extract bullet points and meaningful lines
+            lines = exp_section.split('\n')
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                # Remove bullet points and numbering
+                line = re.sub(r'^[\•\-\*\d\.]\s*', '', line)
+                
+                # Skip section headers and very short lines
+                if len(line) < 8 or len(line) > 300:
+                    continue
+                
+                # Check if line has meaningful content (not just a number or single word)
+                words = line.split()
+                if len(words) < 2:
+                    continue
+                
+                # Remove noise patterns
+                if any(x in line.lower() for x in ['http', '+91', 'linkedin', 'github']):
+                    continue
+                
+                line_norm = line.lower().strip()
+                if line_norm not in seen:
+                    seen.add(line_norm)
+                    experience.append({"title_or_company": line})
+        
+        # If section not found, try pattern matching as fallback
+        if not experience:
+            for pattern in EXPERIENCE_PATTERNS:
+                for m in re.finditer(pattern, text):
+                    for i in range(1, (m.lastindex or 0) + 1):
+                        exp_text = m.group(i)
+                        if not exp_text:
+                            continue
+                        exp_text = exp_text.strip()
+                        if 8 <= len(exp_text) <= 250:
+                            exp_norm = exp_text.lower()
+                            if exp_norm not in seen:
+                                seen.add(exp_norm)
+                                experience.append({"title_or_company": exp_text})
+                        if len(experience) >= 10:
+                            break
+                    if len(experience) >= 10:
+                        break
+        
+        return experience[:15]
 
     def analyze(self, file_path: str) -> dict:
         """Full resume analysis pipeline."""
